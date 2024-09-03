@@ -15,7 +15,7 @@ class ChatClient:
 
         # Set up the GUI
         self.master.title("Chat Client")
-        self.master.geometry("500x600")
+        self.master.geometry("400x600")
         self.master.configure(bg='#1e1e1e')
 
         # Chat window
@@ -43,7 +43,7 @@ class ChatClient:
                 message = self.client_socket.recv(1024).decode('utf-8')
                 if message:
                     self.chat_window.config(state=tk.NORMAL)
-                    self.chat_window.insert(tk.END, f"Server: {message}\n")
+                    self.chat_window.insert(tk.END, f"Client: {message}\n")
                     self.chat_window.config(state=tk.DISABLED)
                     self.chat_window.yview(tk.END)  # Auto-scroll to the bottom
             except Exception as e:
@@ -66,15 +66,13 @@ class ChatClient:
     def close(self):
         self.client_socket.close()
         self.master.destroy()
-
+        
 def hide_console():
     if sys.platform == "win32":
         ctypes.windll.kernel32.SetConsoleTitleW("Hidden Console Window")
         ctypes.windll.user32.ShowWindow(ctypes.windll.kernel32.GetConsoleWindow(), 0)
 
-
 def main():
-
     hide_console()
     server_ip = "192.168.1.33"  # Replace with the server's IP address
     port = 12345

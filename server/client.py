@@ -14,8 +14,8 @@ class ChatClient:
         self.client_socket.connect((self.server_ip, self.port))
 
         # Set up the GUI
-        self.master.title("Chat Client")
-        self.master.geometry("400x600")
+        self.master.title("Futuristic Chat Client")
+        self.master.geometry("400x500")
         self.master.configure(bg='#1e1e1e')
 
         # Chat window
@@ -33,6 +33,10 @@ class ChatClient:
         self.send_button = tk.Button(self.entry_frame, text="Send", command=self.send_message, bg='#4e4e4e', fg='#dcdcdc', font=("Arial", 12), relief=tk.FLAT, padx=10, pady=5)
         self.send_button.pack(side=tk.RIGHT, padx=5)
 
+        # Presence window
+        self.presence_window = tk.Listbox(master, bg='#2e2e2e', fg='#dcdcdc', font=("Arial", 12))
+        self.presence_window.pack(padx=10, pady=10, fill=tk.X)
+
         # Start a thread for receiving messages
         self.receive_thread = threading.Thread(target=self.receive_messages, daemon=True)
         self.receive_thread.start()
@@ -41,9 +45,15 @@ class ChatClient:
         while True:
             try:
                 message = self.client_socket.recv(1024).decode('utf-8')
-                if message:
+                if message.startswith("PRESENCE:"):
+                    # Update presence list
+                    users = message.split(":")[1].split(",")
+                    self.presence_window.delete(0, tk.END)
+                    for user in users:
+                        self.presence_window.insert(tk.END, user)
+                else:
                     self.chat_window.config(state=tk.NORMAL)
-                    self.chat_window.insert(tk.END, f"Client: {message}\n")
+                    self.chat_window.insert(tk.END, f"{message}\n")
                     self.chat_window.config(state=tk.DISABLED)
                     self.chat_window.yview(tk.END)  # Auto-scroll to the bottom
             except Exception as e:
@@ -66,7 +76,7 @@ class ChatClient:
     def close(self):
         self.client_socket.close()
         self.master.destroy()
-        
+
 def hide_console():
     if sys.platform == "win32":
         ctypes.windll.kernel32.SetConsoleTitleW("Hidden Console Window")

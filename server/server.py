@@ -12,12 +12,13 @@ class ChatServer:
         self.port = port
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.bind((self.server_ip, self.port))
-        self.server_socket.listen(2)
-        self.clients = []
+        self.server_socket.listen(5)  # Allow more clients if needed
+        self.clients = {}
+        self.usernames = {}
 
         self.master.title("Futuristic Chat Server")
         self.master.geometry("400x500")
-        self.master.configure(bg='#5a0a5a')
+        self.master.configure(bg='#5a5a5a')
 
         self.chat_window = scrolledtext.ScrolledText(master, state=tk.DISABLED, bg='#2e2e2e', fg='#dcdcdc', font=("Arial", 12), insertbackground='white')
         self.chat_window.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
@@ -30,43 +31,68 @@ class ChatServer:
         self.chat_window.insert(tk.END, "Server listening...\n")
         self.chat_window.config(state=tk.DISABLED)
 
-        while len(self.clients) < 2:
+        while True:
             client_socket, client_address = self.server_socket.accept()
-            self.clients.append(client_socket)
-            self.chat_window.config(state=tk.NORMAL)
-            self.chat_window.insert(tk.END, f"Client {client_address} connected.\n")
-            self.chat_window.config(state=tk.DISABLED)
-        
-        self.chat_window.config(state=tk.NORMAL)
-        self.chat_window.insert(tk.END, "Both clients connected.\n")
-        self.chat_window.config(state=tk.DISABLED)
+            self.clients[client_socket] = client_address
+            self.usernames[client_socket] = f"User {len(self.clients)}"
 
-        # Start threads for each client
-        for client in self.clients:
-            threading.Thread(target=self.handle_client, args=(client,), daemon=True).start()
+            self.chat_window.config(state=tk.NORMAL)
+            self.chat_window.insert(tk.END, f"{self.usernames[client_socket]} connected from {client_address}\n")
+            self.chat_window.config(state=tk.DISABLED)
+
+            threading.Thread(target=self.handle_client, args=(client_socket,), daemon=True).start()
+
+            # Notify all clients of the new connection
+            self.broadcast_presence()
 
     def handle_client(self, client_socket):
-        while True:
-            try:
+        try:
+            while True:
                 message = client_socket.recv(1024).decode('utf-8')
                 if message:
+                    print(f"Received from {self.usernames[client_socket]}: {message}")  # Debug print
                     self.chat_window.config(state=tk.NORMAL)
-                    self.chat_window.insert(tk.END, f"Client: {message}\n")
+                    self.chat_window.insert(tk.END, f"{self.usernames[client_socket]}: {message}\n")
                     self.chat_window.config(state=tk.DISABLED)
-                    
+
                     # Relay message to all other clients
-                    for client in self.clients:
-                        if client != client_socket:
-                            try:
-                                client.send(message.encode('utf-8'))
-                            except:
-                                pass
-            except Exception as e:
-                print(f"Error handling client: {e}")
-                break
+                    self.broadcast_message(message, client_socket)
+        except Exception as e:
+            print(f"Error in handling client: {e}")  # Debug print
+        finally:
+            self.remove_client(client_socket)
+    
+
+    def broadcast_message(self, message, sender_socket):
+        for client in self.clients:
+            if client != sender_socket:
+                try:
+                    client.send(f"{self.usernames[sender_socket]}: {message}".encode('utf-8'))
+                except:
+                    pass
+
+    def broadcast_presence(self):
+        presence_message = "Presence Update: " + ", ".join([f"{self.usernames[client]} (Online)" for client in self.clients])
+        for client in self.clients:
+            try:
+                client.send(presence_message.encode('utf-8'))
+            except:
+                pass
+
+    def remove_client(self, client_socket):
+        username = self.usernames.pop(client_socket, None)
+        self.clients.pop(client_socket, None)
+        client_socket.close()
+
+        self.chat_window.config(state=tk.NORMAL)
+        self.chat_window.insert(tk.END, f"{username} has disconnected.\n")
+        self.chat_window.config(state=tk.DISABLED)
+
+        # Notify remaining clients of the disconnection
+        self.broadcast_presence()
 
     def close(self):
-        for client in self.clients:
+        for client in self.clients.keys():
             client.close()
         self.server_socket.close()
         self.master.destroy()

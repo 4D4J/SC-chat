@@ -28,7 +28,7 @@ class ChatClient:
 
         self.entry = tk.Entry(self.entry_frame, bg='#3e3e3e', fg='#dcdcdc', font=("Arial", 12), insertbackground='white')
         self.entry.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5)
-        self.entry.bind("<Return>", self.send_message)  # Bind Enter key to send message
+        self.entry.bind("<Return>", self.send_message)  
 
         self.send_button = tk.Button(self.entry_frame, text="Send", command=self.send_message, bg='#4e4e4e', fg='#dcdcdc', font=("Arial", 12), relief=tk.FLAT, padx=10, pady=5)
         self.send_button.pack(side=tk.RIGHT, padx=5)
@@ -55,7 +55,7 @@ class ChatClient:
                     self.chat_window.config(state=tk.NORMAL)
                     self.chat_window.insert(tk.END, f"{message}\n")
                     self.chat_window.config(state=tk.DISABLED)
-                    self.chat_window.yview(tk.END)  # Auto-scroll to the bottom
+                    self.chat_window.yview(tk.END)  
             except Exception as e:
                 print(f"Error receiving message: {e}")
                 break
@@ -68,7 +68,7 @@ class ChatClient:
                 self.chat_window.config(state=tk.NORMAL)
                 self.chat_window.insert(tk.END, f"You: {message}\n")
                 self.chat_window.config(state=tk.DISABLED)
-                self.chat_window.yview(tk.END)  # Auto-scroll to the bottom
+                self.chat_window.yview(tk.END)  
                 self.entry.delete(0, tk.END)
             except Exception as e:
                 print(f"Error sending message: {e}")
@@ -89,7 +89,7 @@ def main():
 
     root = tk.Tk()
     client = ChatClient(root, server_ip, port)
-    root.protocol("WM_DELETE_WINDOW", client.close)  # Handle window close event
+    root.protocol("WM_DELETE_WINDOW", client.close)
     root.mainloop()
 
 if __name__ == "__main__":

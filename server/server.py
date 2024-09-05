@@ -12,7 +12,7 @@ class ChatServer:
         self.port = port
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.bind((self.server_ip, self.port))
-        self.server_socket.listen(5)  # Allow more clients if needed
+        self.server_socket.listen(5)  
         self.clients = {}
         self.usernames = {}
 
@@ -50,7 +50,7 @@ class ChatServer:
             while True:
                 message = client_socket.recv(1024).decode('utf-8')
                 if message:
-                    print(f"Received from {self.usernames[client_socket]}: {message}")  # Debug print
+                    print(f"Received from {self.usernames[client_socket]}: {message}") 
                     self.chat_window.config(state=tk.NORMAL)
                     self.chat_window.insert(tk.END, f"{self.usernames[client_socket]}: {message}\n")
                     self.chat_window.config(state=tk.DISABLED)
@@ -58,7 +58,7 @@ class ChatServer:
                     # Relay message to all other clients
                     self.broadcast_message(message, client_socket)
         except Exception as e:
-            print(f"Error in handling client: {e}")  # Debug print
+            print(f"Error in handling client: {e}")  
         finally:
             self.remove_client(client_socket)
     
